@@ -694,7 +694,7 @@ function buildSectionPrompt(base,ask){
 ═══ 분석 요청 (이 항목만 작성) ═══
 ${ask}
 
-한국어로 매우 구체적이고 실질적으로 작성하세요. 다른 항목(안정/적정/도전 지원, 보완전략, 종합요약 등)은 별도로 작성될 예정이므로 이 항목 내용에만 집중하고, 다른 항목과 중복되는 내용은 쓰지 마세요. 추상적인 조언 대신 위에 주어진 구체적 전형 데이터와 수험생 정보를 근거로 분석하세요. 분량이 길어져도 괜찮으니 문장을 어색하게 줄이지 말고 끝까지 충분히 작성하세요.`;
+한국어로 매우 구체적이고 실질적으로 작성하세요. 다른 항목(안정/적정/도전 지원, 보완전략, 종합요약 등)은 별도로 작성될 예정이므로 이 항목 내용에만 집중하고, 다른 항목과 중복되는 내용은 쓰지 마세요. 추상적인 조언 대신 위에 주어진 구체적 전형 데이터와 수험생 정보를 근거로 분석하세요. 분량이 길어져도 괜찮으니 문장을 어색하게 줄이지 말고 끝까지 충분히 작성하세요. 마크다운 문법(#, ##, **, --- 같은 기호)은 절대 사용하지 말고, 제목 없이 자연스러운 줄글 문단으로만 작성하세요. 구분이 필요하면 줄바꿈만 사용하세요.`;
 }
 
 function fileBlock(f){
@@ -717,7 +717,8 @@ function buildInitialContent(promptText){
 async function runSection(target,promptText){
   let messages=[{role:"user",content:buildInitialContent(promptText)}];
   let fullText='';
-  for(let attempt=0;attempt<4;attempt++){
+  let finished=false;
+  for(let attempt=0;attempt<8;attempt++){
     let data;
     try{
       const resp=await fetch(CLAUDE_PROXY_URL,{
@@ -740,9 +741,13 @@ async function runSection(target,promptText){
     fullText+=textPart;
     target.textContent=fullText;
     target.classList.remove('pending');
-    if(data.stop_reason!=='max_tokens')return;
+    if(data.stop_reason!=='max_tokens'){finished=true;break;}
     messages.push({role:"assistant",content:textPart});
     messages.push({role:"user",content:"바로 이어서 계속 작성해주세요. 새로 시작하지 말고 끊긴 부분부터 자연스럽게 이어가세요."});
+  }
+  if(!finished){
+    fullText+='\n\n[내용이 길어 일부가 생략되었습니다.]';
+    target.textContent=fullText;
   }
 }
 
