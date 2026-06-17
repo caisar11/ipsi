@@ -443,6 +443,9 @@ function computeAdmYears(){
 }
 const ADM_YEARS=computeAdmYears();
 
+// Firebase Cloud Function 프록시 주소 — 배포 후 실제 함수 URL로 교체하세요.
+const CLAUDE_PROXY_URL="https://asia-northeast3-medireview-ai-b92cb.cloudfunctions.net/claudeProxy";
+
 document.addEventListener('DOMContentLoaded',()=>{
   renderGradeYears();
   const area=document.getElementById('uploadArea');
@@ -717,10 +720,10 @@ async function runSection(target,promptText){
   for(let attempt=0;attempt<4;attempt++){
     let data;
     try{
-      const resp=await fetch("https://api.anthropic.com/v1/messages",{
+      const resp=await fetch(CLAUDE_PROXY_URL,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages})
+        body:JSON.stringify({max_tokens:1000,messages})
       });
       if(!resp.ok){
         const e=await resp.json().catch(()=>({}));
