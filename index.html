@@ -761,29 +761,40 @@ async function startConsult(){
       msgContent=buildPrompt();
     }
 
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+    const GEMINI_KEY = 'AIzaSy여기에키입력';
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:streamGenerateContent?alt=sse&key=${GEMINI_KEY}`;
+
+    // 파일 포함 시 parts 구성
+    let parts = [];
+    if(uploadedB64.length > 0){
+      uploadedB64.forEach(f=>{
+        parts.push({inlineData:{mimeType:f.type, data:f.data}});
+      });
+    }
+    parts.push({text: typeof msgContent === 'string' ? msgContent : msgContent[msgContent.length-1].text});
+
+    const resp = await fetch(GEMINI_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-6',max_tokens:8000,stream:true,
-        messages:[{role:'user',content:msgContent}]
+        contents:[{role:'user', parts}],
+        generationConfig:{maxOutputTokens:8000, temperature:0.7}
       })
     });
 
-    if(!resp.ok){const e=await resp.json();box.innerHTML=`<span style="color:red">오류: ${e.error?.message}</span>`;return;}
+    if(!resp.ok){const e=await resp.json();box.innerHTML=`<span style="color:red">오류: ${e.error?.message||JSON.stringify(e)}</span>`;return;}
 
     const reader=resp.body.getReader(),dec=new TextDecoder();
     let txt='';box.innerHTML='';
     while(true){
       const{done,value}=await reader.read();if(done)break;
-      for(const line of dec.decode(value).split('\n')){
+      const chunk=dec.decode(value);
+      for(const line of chunk.split('\n')){
         if(line.startsWith('data: ')){
           try{
             const j=JSON.parse(line.slice(6));
-            if(j.type==='content_block_delta'&&j.delta?.text){
-              txt+=j.delta.text;
-              box.textContent=txt;
-              box.scrollTop=box.scrollHeight;
-            }
+            const t=j.candidates?.[0]?.content?.parts?.[0]?.text;
+            if(t){txt+=t;box.textContent=txt;box.scrollTop=box.scrollHeight;}
           }catch{}
         }
       }
