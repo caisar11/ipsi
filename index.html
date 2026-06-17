@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdmissionAI — AI 대입 컨설팅</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a2744;--navy2:#243460;--gold:#c9a84c;--gold2:#e8c97a;
+  --bg:#f0f2f8;--card:#fff;--border:#dde3f0;--text:#1e293b;--sub:#64748b;
+  --green:#16a34a;--red:#dc2626;--blue:#2563eb
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:16px}
+
+/* ── HEADER ── */
+header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:20px 32px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 12px rgba(0,0,0,.25)}
+.logo{font-size:32px}
+header h1{font-size:26px;font-weight:800;letter-spacing:-1px}
+header h1 span{color:var(--gold2)}
+.badge{background:var(--gold);color:var(--navy);font-size:11px;font-weight:800;padding:3px 9px;border-radius:12px;margin-left:10px;vertical-align:middle}
+.hdr-sub{margin-left:auto;font-size:13px;color:rgba(255,255,255,.65);text-align:right;line-height:1.5}
+
+/* ── STEPS ── */
+.steps-wrap{background:var(--navy2);padding:0 32px}
+.steps{display:flex;max-width:1100px;margin:0 auto}
+.step{flex:1;text-align:center;font-size:13px;font-weight:600;color:rgba(255,255,255,.45);padding:14px 0;position:relative;cursor:default;transition:.2s}
+.step::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,.15);border-radius:2px 2px 0 0}
+.step.active{color:#fff}
+.step.active::after{background:var(--gold)}
+.step.done{color:rgba(255,255,255,.7)}
+.step.done::after{background:rgba(255,255,255,.4)}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.15);font-size:12px;margin-right:6px;transition:.2s}
+.step.active .step-num{background:var(--gold);color:var(--navy)}
+.step.done .step-num{background:rgba(255,255,255,.4)}
+
+/* ── MAIN ── */
+main{max-width:1100px;margin:0 auto;padding:28px 24px 80px}
+
+/* ── CARD ── */
+.card{background:var(--card);border-radius:18px;padding:28px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1px solid var(--border)}
+.card-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.icon-box{width:36px;height:36px;background:var(--navy);color:var(--gold2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sec-title{font-size:15px;font-weight:700;color:var(--navy);padding:12px 0 10px;border-bottom:2px solid var(--border);margin-bottom:14px}
+
+/* ── GRADE BUTTONS ── */
+.grade-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grade-btn{padding:28px 16px;border:2.5px solid var(--border);border-radius:16px;background:#fff;cursor:pointer;text-align:center;transition:.2s;font-family:inherit}
+.grade-btn:hover{border-color:var(--navy);background:#f0f4ff;transform:translateY(-2px)}
+.grade-btn.sel{border-color:var(--navy);background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(26,39,68,.3)}
+.grade-btn .g-emoji{font-size:36px;margin-bottom:8px}
+.grade-btn .g-name{font-size:24px;font-weight:800;margin-bottom:4px}
+.grade-btn .g-yr{font-size:13px;opacity:.7;margin-top:2px}
+.grade-btn .g-tag{display:inline-block;font-size:11px;background:var(--gold);color:var(--navy);padding:2px 8px;border-radius:10px;margin-top:6px;font-weight:700}
+.grade-btn.sel .g-tag{background:rgba(255,255,255,.25);color:#fff}
+
+/* ── SEM TABS ── */
+.sem-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.sem-tab{padding:8px 18px;border-radius:24px;border:2px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+.sem-tab:hover{border-color:var(--navy)}
+.sem-tab.active{border-color:var(--navy);background:var(--navy);color:#fff}
+.sem-tab.has-data{border-color:var(--green);color:var(--green)}
+.sem-tab.has-data.active{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* ── TABLE ── */
+.g-table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:10px}
+.g-table th{background:#f1f5f9;color:var(--sub);font-weight:700;padding:10px 8px;text-align:center;border:1px solid var(--border);font-size:13px}
+.g-table td{padding:6px 4px;border:1px solid var(--border);text-align:center}
+.g-table tbody tr:hover td{background:#f8fafc}
+.g-table input,.g-table select{width:100%;border:none;background:transparent;text-align:center;font-size:13px;font-family:inherit;outline:none;padding:3px 0}
+.g-table input:focus,.g-table select:focus{background:#eff6ff;border-radius:4px}
+.g-table .nm{text-align:left;padding-left:10px}
+.g-table .nm input{text-align:left}
+.del-btn{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:16px;transition:.15s}
+.del-btn:hover{color:var(--red)}
+
+/* ── CUMUL BOX ── */
+.cumul-box{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:16px;padding:20px 28px;margin-top:16px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.cumul-item .lbl{font-size:12px;opacity:.7;margin-bottom:4px}
+.cumul-item .val{font-size:28px;font-weight:800;color:var(--gold2)}
+.cumul-item .val.sm{font-size:16px;color:#fff}
+.cdiv{width:1px;height:48px;background:rgba(255,255,255,.2)}
+
+/* ── INPUT ── */
+.input-group{margin-bottom:14px}
+.input-group label{font-size:13px;font-weight:700;color:var(--sub);display:block;margin-bottom:6px}
+.input-group input,.input-group select,.input-group textarea{width:100%;border:2px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit;transition:.2s;background:#fff}
+.input-group input:focus,.input-group select:focus,.input-group textarea:focus{border-color:var(--navy)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ── NOTICE ── */
+.notice{border-radius:10px;padding:12px 16px;font-size:13px;line-height:1.7;margin-bottom:14px}
+.notice.blue{background:#eff6ff;border:1.5px solid #bfdbfe;color:#1e40af}
+.notice.yellow{background:#fffbeb;border:1.5px solid #fde68a;color:#92400e}
+.notice.green{background:#f0fdf4;border:1.5px solid #bbf7d0;color:#166534}
+.notice.red{background:#fff1f2;border:1.5px solid #fecdd3;color:#be123c}
+
+/* ── CHIPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.chip{padding:7px 14px;border-radius:22px;border:2px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+.chip:hover{border-color:var(--navy);background:#f0f4ff}
+.chip.sel{border-color:var(--navy);background:var(--navy);color:#fff}
+
+/* ── MOCK RESULT ── */
+.mock-result{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:13px;color:#166534;margin-top:8px;line-height:1.8;display:none}
+
+/* ── UPLOAD AREA ── */
+.upload-area{border:2.5px dashed var(--border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:.2s;background:#fafbfe}
+.upload-area:hover{border-color:var(--navy);background:#f0f4ff}
+.upload-area.active{border-color:var(--green);background:#f0fdf4}
+.upload-area .upload-icon{font-size:40px;margin-bottom:10px}
+.upload-area .upload-text{font-size:15px;font-weight:600;color:var(--sub)}
+.upload-area .upload-sub{font-size:12px;color:#94a3b8;margin-top:4px}
+#fileInput{display:none}
+.file-list{margin-top:12px}
+.file-item{display:flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:13px;color:var(--green)}
+.file-item .fi-remove{margin-left:auto;cursor:pointer;color:#94a3b8;font-size:16px}
+.file-item .fi-remove:hover{color:var(--red)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:12px 22px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;border:none;transition:.2s;font-family:inherit}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy2);transform:translateY(-1px)}
+.btn-gold{background:var(--gold);color:var(--navy);font-size:16px;padding:14px 28px}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.4)}
+.btn-outline{background:#fff;color:var(--navy);border:2px solid var(--navy)}
+.btn-outline:hover{background:#f0f4ff}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:#15803d}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:8px}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+hr.sec{border:none;border-top:1.5px solid var(--border);margin:20px 0}
+
+/* ── RESULT ── */
+.stream-box{background:#f8fafc;border:1.5px solid var(--border);border-radius:12px;padding:20px;font-size:15px;line-height:2;min-height:100px;white-space:pre-wrap;max-height:none;overflow-y:visible}
+.loading-dot{display:inline-block;animation:blink 1.2s infinite;font-size:20px}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+.result-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+/* ── PRINT ── */
+@media print{
+  header,. steps-wrap,.result-actions,.btn-row,.upload-area,.file-list,
+  #step1,#step2,#step3{display:none!important}
+  body{background:#fff;font-size:12pt}
+  .card{box-shadow:none;border:1px solid #ccc;page-break-inside:avoid}
+  .stream-box{border:none;padding:0;font-size:12pt;line-height:1.8}
+  .print-header{display:block!important}
+}
+.print-header{display:none;text-align:center;margin-bottom:20px}
+.print-header h2{font-size:20pt;font-weight:800;color:#1a2744}
+.print-header p{font-size:11pt;color:#64748b;margin-top:4px}
+
+/* ── HIDDEN ── */
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎓</div>
+  <h1>Admission<span>AI</span><span class="badge">BETA</span></h1>
+  <div class="hdr-sub">동국대학교 입학처 내부 테스트 버전<br>AI 기반 대입 컨설팅 플랫폼</div>
+</header>
+
+<div class="steps-wrap">
+  <div class="steps">
+    <div class="step active" id="s1"><span class="step-num">1</span>학년 선택</div>
+    <div class="step" id="s2"><span class="step-num">2</span>성적 입력</div>
+    <div class="step" id="s3"><span class="step-num">3</span>학생부 업로드</div>
+    <div class="step" id="s4"><span class="step-num">4</span>희망 대학</div>
+    <div class="step" id="s5"><span class="step-num">5</span>AI 컨설팅</div>
+  </div>
+</div>
+
+<main>
+
+<!-- ── STEP 1: 학년 ── -->
+<div id="step1" class="card">
+  <div class="card-title"><div class="icon-box">📚</div>현재 학년을 선택하세요</div>
+  <div class="grade-btns">
+    <button class="grade-btn" onclick="selGrade(3)" id="g3">
+      <div class="g-emoji">🎯</div>
+      <div class="g-name">고 3</div>
+      <div class="g-yr">2026학년도 입시</div>
+      <div class="g-yr">2026년 11월 수능</div>
+      <span class="g-tag">현행 9등급 체계</span>
+    </button>
+    <button class="grade-btn" onclick="selGrade(2)" id="g2">
+      <div class="g-emoji">📐</div>
+      <div class="g-name">고 2</div>
+      <div class="g-yr">2027학년도 입시</div>
+      <div class="g-yr">2027년 11월 수능</div>
+      <span class="g-tag">고교학점제 1~5등급</span>
+    </button>
+    <button class="grade-btn" onclick="selGrade(1)" id="g1">
+      <div class="g-emoji">🌱</div>
+      <div class="g-name">고 1</div>
+      <div class="g-yr">2028학년도 입시</div>
+      <div class="g-yr">2028년 11월 수능</div>
+      <span class="g-tag">고교학점제 1~5등급</span>
+    </button>
+  </div>
+</div>
+
+<!-- ── STEP 2: 성적 ── -->
+<div id="step2" class="card hidden">
+  <div class="card-title"><div class="icon-box">📊</div>성적 입력 <span id="gradeLabel" style="font-size:14px;font-weight:500;color:var(--sub);margin-left:6px"></span></div>
+
+  <!-- 고3 -->
+  <div id="input3" class="hidden">
+    <div class="notice blue">📌 고3은 현행 <b>9등급 체계</b>입니다. 누적 평균 등급을 입력하세요.</div>
+    <div class="grid2">
+      <div class="input-group"><label>내신 누적 평균 등급 (1~9)</label><input type="number" id="naesin" min="1" max="9" step="0.01" placeholder="예: 2.84"></div>
+      <div class="input-group"><label>수능 예상 백분위 (%)</label><input type="number" id="suneung" min="0" max="100" placeholder="예: 85"></div>
+    </div>
+    <div class="grid3">
+      <div class="input-group"><label>국어 등급</label><input type="number" id="kor" min="1" max="9" placeholder="1~9"></div>
+      <div class="input-group"><label>수학 등급</label><input type="number" id="math2" min="1" max="9" placeholder="1~9"></div>
+      <div class="input-group"><label>영어 등급</label><input type="number" id="eng" min="1" max="9" placeholder="1~9"></div>
+    </div>
+    <div class="grid2">
+      <div class="input-group"><label>탐구 영역</label>
+        <select id="exp"><option value="사탐">사회탐구</option><option value="과탐">과학탐구</option></select>
+      </div>
+      <div class="input-group"><label>수학 선택 과목</label>
+        <select id="mathtype"><option value="미적분">미적분</option><option value="확통">확률과통계</option><option value="기하">기하</option></select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 고2·고1 -->
+  <div id="inputGHP" class="hidden">
+    <div class="notice blue">
+      📌 <b>고교학점제 성적 입력 안내</b><br>
+      · <b>석차등급 1~5등급</b>: 공통과목·일반선택과목 (상대평가)<br>
+      · <b>성취도 A~E</b>: 진로선택과목 (절대평가, 석차등급 없음)<br>
+      · 이수단위 = 주당 수업시수 | 해당 없는 칸은 비워두세요
+    </div>
+    <div class="sem-tabs" id="semTabs"></div>
+    <div id="semContent"></div>
+    <div class="cumul-box">
+      <div class="cumul-item"><div class="lbl">누적 평균 석차등급</div><div class="val" id="cumulGrade">-</div></div>
+      <div class="cdiv"></div>
+      <div class="cumul-item"><div class="lbl">입력 과목 수</div><div class="val sm" id="cumulCount">0과목</div></div>
+      <div class="cdiv"></div>
+      <div class="cumul-item"><div class="lbl">총 이수단위</div><div class="val sm" id="cumulUnit">0단위</div></div>
+      <div class="cdiv"></div>
+      <div class="cumul-item" style="flex:1"><div class="lbl">성취도 분포 (진로선택)</div><div class="val sm" id="cumulAchieve">-</div></div>
+    </div>
+    <div class="input-group" style="margin-top:16px"><label>희망 전공 계열</label>
+      <select id="major1">
+        <option value="이공계">이공계 (자연/공학)</option>
+        <option value="인문사회">인문사회</option>
+        <option value="의약학">의약학</option>
+        <option value="예체능">예체능</option>
+        <option value="사범">사범/교육</option>
+      </select>
+    </div>
+  </div>
+
+  <hr class="sec">
+
+  <!-- 학교 정보 -->
+  <div class="sec-title">🏫 재학 고등학교</div>
+  <div class="grid2">
+    <div class="input-group"><label>고등학교 유형</label>
+      <select id="schoolType" onchange="onSchoolType()">
+        <option value="일반고">일반고</option>
+        <option value="자사고(전국단위)">자사고 — 전국단위 (용인외대부고·하나고·민사고 등)</option>
+        <option value="자사고(광역단위)">자사고 — 광역단위</option>
+        <option value="과학고">과학고</option>
+        <option value="영재고">영재고</option>
+        <option value="외국어고">외국어고</option>
+        <option value="국제고">국제고</option>
+        <option value="예술고">예술고</option>
+        <option value="체육고">체육고</option>
+        <option value="특성화고·마이스터고">특성화고·마이스터고</option>
+      </select>
+    </div>
+    <div class="input-group"><label>학교명 <span style="font-weight:400">(선택)</span></label>
+      <input type="text" id="schoolName" placeholder="예: 용인외국어고등학교">
+    </div>
+  </div>
+  <div id="schoolNotice" class="notice yellow hidden">
+    ⚡ <b>특목·자사고 재학</b> — 내신 경쟁이 일반고 대비 극도로 치열합니다. 전국자사고 내신 3등급은 일반고 1~1.5등급에 준하는 수준으로 평가되기도 합니다. AI 컨설팅 시 이 점이 자동으로 반영됩니다.
+  </div>
+
+  <hr class="sec">
+
+  <!-- 모의고사 -->
+  <div class="sec-title">📝 최근 모의고사 성적 <span style="font-size:13px;font-weight:500;color:var(--sub)">(수능최저 충족 여부 예측에 활용)</span></div>
+  <div class="notice blue">📌 가장 최근 모의고사 기준으로 입력하세요. 비워도 됩니다.</div>
+  <div class="grid2">
+    <div class="input-group"><label>모의고사 종류</label>
+      <select id="mockName">
+        <option value="">선택 안 함</option>
+        <option value="3월 학력평가">3월 학력평가</option>
+        <option value="4월 학력평가">4월 학력평가</option>
+        <option value="6월 모의평가">6월 모의평가 (수능출제기관)</option>
+        <option value="7월 학력평가">7월 학력평가</option>
+        <option value="9월 모의평가">9월 모의평가 (수능출제기관)</option>
+        <option value="10월 학력평가">10월 학력평가</option>
+      </select>
+    </div>
+    <div class="input-group"><label>국어 등급</label>
+      <select id="mKor" onchange="calcMock()"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="input-group"><label>수학 등급</label>
+      <select id="mMath" onchange="calcMock()"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select>
+    </div>
+    <div class="input-group"><label>영어 등급</label>
+      <select id="mEng" onchange="calcMock()"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select>
+    </div>
+    <div class="input-group"><label>탐구 상위 1과목</label>
+      <select id="mTangu" onchange="calcMock()"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select>
+    </div>
+  </div>
+  <div class="mock-result" id="mockResult"></div>
+
+  <hr class="sec">
+
+  <!-- 비교과 -->
+  <div class="sec-title">📋 비교과 및 기타</div>
+  <div class="grid2">
+    <div class="input-group"><label>비교과 활동 수준</label>
+      <select id="extracurr">
+        <option value="우수">우수 (수상, 임원, 연구활동 다수)</option>
+        <option value="보통">보통 (일반적인 학교생활)</option>
+        <option value="미흡">미흡 (특별 활동 없음)</option>
+      </select>
+    </div>
+    <div class="input-group"><label>자소서·면접 준비</label>
+      <select id="essay">
+        <option value="준비중">준비 중</option>
+        <option value="완료">완료</option>
+        <option value="미준비">아직 미준비</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goStep(1)">◀ 이전</button>
+    <button class="btn btn-primary" onclick="goStep(3)">다음 ▶</button>
+  </div>
+</div>
+
+<!-- ── STEP 3: 학생부 업로드 ── -->
+<div id="step3" class="card hidden">
+  <div class="card-title"><div class="icon-box">📄</div>학생부 업로드 <span style="font-size:14px;font-weight:500;color:var(--sub);margin-left:6px">(선택 — 세특·활동사항 반영)</span></div>
+
+  <div class="notice blue">
+    📌 <b>학생부를 업로드하면 AI가 세부능력 및 특기사항, 활동 내역, 수상 경력 등을 분석하여 더 정밀한 컨설팅을 제공합니다.</b><br>
+    · PDF 또는 이미지 파일 (최대 5개)<br>
+    · 개인정보가 포함되므로 테스트 후 브라우저를 닫으면 자동 삭제됩니다
+  </div>
+
+  <div class="upload-area" onclick="document.getElementById('fileInput').click()" id="uploadArea">
+    <div class="upload-icon">📎</div>
+    <div class="upload-text">클릭하여 학생부 파일 업로드</div>
+    <div class="upload-sub">PDF, JPG, PNG 지원 · 드래그앤드롭도 가능</div>
+  </div>
+  <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" multiple onchange="handleFiles(this.files)">
+  <div class="file-list" id="fileList"></div>
+
+  <div id="sbTextWrap" style="margin-top:16px">
+    <div class="sec-title" style="margin-top:0">✏️ 또는 세특 내용 직접 입력</div>
+    <div class="input-group">
+      <label>주요 세부능력 및 특기사항, 수상, 활동 내역 (자유롭게 입력)</label>
+      <textarea id="sbText" rows="6" placeholder="예) 수학 세특: 미분방정식을 자발적으로 학습하여... / 화학 세특: 산화환원 반응 실험에서... / 수상: 전국 과학탐구올림피아드 2위..."></textarea>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goStep(2)">◀ 이전</button>
+    <button class="btn btn-primary" onclick="goStep(4)">다음 ▶</button>
+  </div>
+</div>
+
+<!-- ── STEP 4: 희망 대학 ── -->
+<div id="step4" class="card hidden">
+  <div class="card-title"><div class="icon-box">🏫</div>희망 대학 및 전형 선택</div>
+
+  <div class="sec-title">전형 유형</div>
+  <div class="chips">
+    <span class="chip" onclick="togChip(this,'학생부종합')">학생부종합</span>
+    <span class="chip" onclick="togChip(this,'학생부교과')">학생부교과</span>
+    <span class="chip" onclick="togChip(this,'논술')">논술</span>
+    <span class="chip" onclick="togChip(this,'정시(수능)')">정시(수능)</span>
+  </div>
+
+  <div class="sec-title">희망 대학 <span style="font-size:13px;font-weight:500;color:var(--sub)">(최대 6개)</span></div>
+  <div class="chips" id="univChips">
+    <span class="chip" onclick="togUniv(this)">서울대</span>
+    <span class="chip" onclick="togUniv(this)">연세대</span>
+    <span class="chip" onclick="togUniv(this)">고려대</span>
+    <span class="chip" onclick="togUniv(this)">성균관대</span>
+    <span class="chip" onclick="togUniv(this)">한양대</span>
+    <span class="chip" onclick="togUniv(this)">서강대</span>
+    <span class="chip" onclick="togUniv(this)">이화여대</span>
+    <span class="chip" onclick="togUniv(this)">중앙대</span>
+    <span class="chip" onclick="togUniv(this)">경희대</span>
+    <span class="chip" onclick="togUniv(this)">한국외대</span>
+    <span class="chip" onclick="togUniv(this)">서울시립대</span>
+    <span class="chip" onclick="togUniv(this)">건국대</span>
+    <span class="chip" onclick="togUniv(this)">동국대</span>
+    <span class="chip" onclick="togUniv(this)">홍익대</span>
+  </div>
+  <input type="text" id="univCustom" placeholder="목록에 없는 대학은 직접 입력 (쉼표 구분)" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit;margin-top:4px">
+
+  <div class="sec-title" style="margin-top:18px">희망 학과 / 계열</div>
+  <div class="input-group">
+    <input type="text" id="dept" placeholder="예: 컴퓨터공학과, 경영학과, 의예과 등">
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goStep(3)">◀ 이전</button>
+    <button class="btn btn-gold" onclick="startConsult()">🤖 AI 컨설팅 시작</button>
+  </div>
+</div>
+
+<!-- ── STEP 5: 결과 ── -->
+<div id="step5" class="card hidden">
+  <div class="print-header">
+    <h2>🎓 AdmissionAI 컨설팅 결과</h2>
+    <p id="printMeta"></p>
+  </div>
+  <div class="card-title"><div class="icon-box">🤖</div>AI 컨설팅 결과 <span id="yearBadge" style="font-size:14px;font-weight:500;color:var(--sub);margin-left:6px"></span></div>
+  <div class="stream-box" id="streamBox">
+    <span class="loading-dot">●</span><span class="loading-dot" style="animation-delay:.2s">●</span><span class="loading-dot" style="animation-delay:.4s">●</span> AI가 분석 중입니다...
+  </div>
+  <div class="result-actions">
+    <button class="btn btn-green" onclick="printResult()">🖨️ 인쇄 / PDF 저장</button>
+    <button class="btn btn-outline" onclick="restart()">🔄 새 컨설팅</button>
+  </div>
+  <div class="notice blue" style="margin-top:14px">⚠️ 본 결과는 AI의 참고 의견이며, 반드시 각 대학 공식 모집요강을 확인하세요.</div>
+</div>
+
+</main>
+
+<script>
+// ── 14개 대학 전형 데이터 ──
+const UNIV_DATA = {
+  "경희대학교":{수시:[{name:"학생부교과(지역균형)",capacity:580,suneung:"일반2개합5이내·의약학3개합4이내 한국사5등급",elements:"교과70%+교과종합30%"},{name:"학생부종합(네오르네상스/면접형)",capacity:754,suneung:"없음",elements:"1단계서류100%(4배수)→2단계서류70%+면접30%"},{name:"학생부종합(네오르네상스/서류형)",capacity:345,suneung:"일반2개합5이내·의약학3개합4이내",elements:"서류100%"},{name:"논술",capacity:469,suneung:"일반2개합5이내·의약학3개합4이내",elements:"논술100%"}],정시:"가/나군. 수능90%+교과10% or 수능100%. 인문:국어40%수학35%탐구25%. 자연:국어30%수학40%통합사회10%통합과학20%",특징:"고교학점제A~E석차등급변환. 탐구통합사회/통합과학상위1과목. 자연계이수교과가산점최대8점"},
+  "고려대학교":{수시:[{name:"학교추천",capacity:672,suneung:"일반없음·의학과4개합5이내 한국사4등급",elements:"교과80%+서류20%"},{name:"학업우수",capacity:823,suneung:"일반4개합9이내·의학4개합5이내 한국사4등급",elements:"1단계서류100%(5배수)→2단계서류80%+면접20%"},{name:"계열적합",capacity:556,suneung:"없음",elements:"서류100%"},{name:"논술",capacity:367,suneung:"4개합8이내 한국사4등급",elements:"논술100%"}],정시:"가군. 수능100%(일반) or 수능80%+교과20%(교과우수). 표준점수반영",특징:"학업우수수능최저완화(8→9이내). 계열적합면접폐지→서류100%. 교과우수졸업예정자만"},
+  "서강대학교":{수시:[{name:"교과(지역균형)",capacity:180,suneung:"3개영역각3등급 한국사4등급",elements:"교과80%+성취도10%+출결10%"},{name:"종합(일반Ⅰ)",capacity:497,suneung:"없음",elements:"서류100%"},{name:"종합(일반Ⅱ)",capacity:74,suneung:"3개합7이내 한국사4등급",elements:"서류100%"},{name:"논술",capacity:170,suneung:"3개합7이내 한국사4등급",elements:"논술80%+교과10%+출결10%"}],정시:"나/다군. 수능100%(일반) or 수능80%+교과10%+출결10%(지역균형). 가중치국어1.2/수학1.4/탐구0.4",특징:"정시지역균형신설. 논술80+교과10+출결10. 일반Ⅱ수능최저신설"},
+  "서울대학교":{수시:[{name:"지역균형",capacity:728,suneung:"없음(고교별3명, 자사고·외고·과학고·영재학교불가)",elements:"1단계서류100%(3배수)→2단계서류70%+면접30%"},{name:"일반전형",capacity:1585,suneung:"없음",elements:"1단계서류100%(2배수)→2단계서류50%+면접50%"},{name:"기회균형",capacity:183,suneung:"없음",elements:"1단계서류100%(2배수)→2단계서류70%+면접30%"}],정시:"나군. 1단계수능100%(3배수)→2단계수능60%+교과역량평가40%. 인문:국어×100수학×120사탐×50과탐×30. 자연:국어×100수학×120사탐×30과탐×50",특징:"수능최저없음(전전형). 정시교과역량평가신설. 첨단융합학부신설(219명)"},
+  "성균관대학교":{수시:[{name:"융합인재",capacity:305,suneung:"5개영역중3개합6이내",elements:"학생부100%"},{name:"탐구인재",capacity:533,suneung:"없음",elements:"학생부100%"},{name:"성균인재(면접형)",capacity:218,suneung:"없음",elements:"1단계학생부100%→2단계70%+면접30%"},{name:"추천인재(교과)",capacity:415,suneung:"일반5개중3개합7이내·핵심계열합6이내",elements:"정량70%+정성30%"},{name:"논술",capacity:376,suneung:"일반합6이내·핵심계열합5이내·의예4개합5이내",elements:"논술100%"}],정시:"가/나/다군3군체제. 수능100%(일반형)+특화형신설. 탐구2과목등급분리",특징:"추천인재졸업예정자만. 지역인재(의예)신설. 특화형신설"},
+  "연세대학교":{수시:[{name:"교과(추천형)",capacity:564,suneung:"인문2개합4이내(국·수중1)/자연2개합5이내(수학필수)/의약학1등급2개 영어3등급 한국사4등급",elements:"1단계교과100%(5배수)→2단계교과80%+서류20%"},{name:"종합(종합인재형)",capacity:1015,suneung:"인문2개합4이내/자연2개합5이내(수학)/의약학1등급2개",elements:"1단계서류100%(4배수)→2단계서류70%+면접30%"},{name:"종합(탐구인재형)",capacity:399,suneung:"없음",elements:"1단계서류100%→2단계서류60%+면접40%"},{name:"논술",capacity:334,suneung:"3개합6이내(국·수모두포함)·약학합5이내",elements:"논술100%"}],정시:"가군. 수능900+서류100. 인문:국어300수학200사탐200과탐100영어100. 자연:국어200수학300사탐100과탐200영어100",특징:"종합인재형으로통합. 탐구인재형신설. 논술수능최저최초적용"},
+  "이화여자대학교":{수시:[{name:"교과(고교추천)",capacity:377,suneung:"일반4개중3개합7이내(탐구상위1)·의예합5이내",elements:"교과80%+출결5%+서류15%"},{name:"종합(미래인재-서류)",capacity:931,suneung:"일반합7이내·의예합5이내·약학합6이내",elements:"서류100%"},{name:"종합(미래인재-면접)",capacity:181,suneung:"없음",elements:"1단계서류100%(5배수)→2단계서류70%+면접30%"},{name:"논술",capacity:296,suneung:"일반합7이내·의예합5이내",elements:"논술100%"}],정시:"가/나/다군. 수능100% or 수능85%+서류15%. 국어30%수학30%탐구20%+10%영어10%",특징:"여성전용. 예체능서류전형신설. 정시나군통합선발신설"},
+  "중앙대학교":{수시:[{name:"교과(지역균형)",capacity:505,suneung:"서울일반3개합7이내·약학4개합5이내 한국사4등급",elements:"교과90%+출결10%"},{name:"탐구하는학종(Core)",capacity:499,suneung:"없음",elements:"1단계서류100%→2단계서류60%+면접40%"},{name:"모두의학종(All)",capacity:384,suneung:"없음",elements:"1단계서류100%→2단계서류60%+면접40%"},{name:"최저있는학종(Up)",capacity:114,suneung:"일반3개합6이내·약학4개합5이내",elements:"서류100%"},{name:"모두의논술",capacity:395,suneung:"서울일반3개합6이내·약학4개합5이내",elements:"논술80%+교과10%+출결10%"},{name:"재학생논술",capacity:87,suneung:"없음(2028년졸업예정자만)",elements:"논술80%+교과10%+출결10%"}],정시:"가/나/다군. 수능89%+출결11%(수능89) or 수능67%+서류33%(수능67,수능최저있음)",특징:"전형명전면개편. 재학생논술신설. 정시수능67신설"},
+  "한양대학교":{수시:[{name:"교과(추천형)",capacity:506,suneung:"자연·상경3개(수학포함)각3등급·인문3개각3등급",elements:"교과60%+학생부종합평가40%"},{name:"종합(학업형)",capacity:811,suneung:"자연·상경3개(수학포함)합7이내·인문3개합7이내·의예3개합4이내",elements:"학생부종합평가100%"},{name:"종합(면접형)",capacity:266,suneung:"없음",elements:"1단계종합평가100%→2단계70%+면접30%"},{name:"논술",capacity:289,suneung:"일반3개합7이내(탐구상위1)·의예3개합4이내(탐구2개평균)",elements:"논술90%+출결10%"}],정시:"가/나/다군. 수능90%+종합평가10%. 유형A(국+수35+30탐25영10) or 유형B(40+35탐15영10) 중상위",특징:"교과추천교과60+종합40변경. 학업형대폭확대(291→811명). 추천형졸업예정자만"},
+  "한국외국어대학교":{수시:[{name:"학교장추천전형(교과)",capacity:375,suneung:"A그룹2개합5이내·B그룹2개합6이내",elements:"교과70%+서류30%"},{name:"종합(면접형)",capacity:601,suneung:"없음",elements:"1단계서류100%(3배수)→2단계서류50%+면접50%"},{name:"종합(서류형)",capacity:464,suneung:"A그룹2개합6이내·B그룹2개합7이내",elements:"서류100%"},{name:"논술",capacity:449,suneung:"A그룹2개합5이내·B그룹2개합6이내",elements:"논술100%"}],정시:"나/다군. 수능100%. 유형A(국30%수학20%탐30%영20%) or 유형B(국20%수학30%탐30%영20%) 중상위. 탐구:통합사회/통합과학상위1과목",특징:"언어계열특화. 수능탐구통합사회/통합과학상위1과목반영. 다양한외국어학과보유"},
+  "서울시립대학교":{수시:[{name:"논술전형",capacity:86,suneung:"3개합7이내 한국사4등급",elements:"논술100%"},{name:"고교추천전형(교과)",capacity:346,suneung:"3개합7이내 한국사4등급",elements:"교과60%+서류40%"},{name:"학생부종합전형",capacity:424,suneung:"없음",elements:"1단계서류100%(3배수)→2단계서류50%+면접50%"},{name:"기회균형전형Ⅰ",capacity:132,suneung:"없음",elements:"1단계서류100%(3배수)→2단계서류50%+면접50%"}],정시:"가/나군. 수능80%+교과18%+출결2%. 인문계Ⅰ:국어35%수학35%탐구30%. 자연:국어30%수학40%탐구30%. 탐구표준점수+가산점(인문사탐3%,자연과탐3%)",특징:"논술수능최저신설(기존없음→3개합7이내). 고교추천전형방법변경(교과80→60%+서류40%). 정시수능100%→수능80%+교과18%+출결2%"},
+  "건국대학교":{수시:[{name:"KU지역균형(교과)",capacity:348,suneung:"인문/자연5개중3개합8이내·수의예과3개합4이내",elements:"교과70%+교과정성30%"},{name:"KU자기추천(종합)",capacity:910,suneung:"없음",elements:"1단계서류100%(3배수)→2단계서류70%+면접30%"},{name:"기회균형(종합)",capacity:80,suneung:"없음",elements:"서류70%+교과30%"},{name:"KU논술",capacity:327,suneung:"인문/자연3개합8이내·수의예과3개합4이내",elements:"논술100%"}],정시:"가/나군. 수능100%(일반) or 수능90%+교과정성10%(자유전공학부). 탐구상위1과목반영. A패턴(국45%수35%탐10%영10%) or B패턴(국35%수45%탐10%영10%) 중상위",특징:"KU지역균형수능최저신설. 논술유형일원화(국어+통합사회+수학통합). 교과정량반영20과목상위"},
+  "동국대학교":{수시:[{name:"Do Dream(종합)",capacity:894,suneung:"없음",elements:"1단계서류100%(2.5~3.5배수)→2단계서류60%+면접40%"},{name:"불교추천인재(종합)",capacity:108,suneung:"없음",elements:"1단계서류100%→2단계서류60%+면접40%"},{name:"학교장추천인재(교과)",capacity:470,suneung:"없음",elements:"교과70%+서류30%"},{name:"기회균형통합(교과)",capacity:134,suneung:"없음",elements:"교과70%+서류30%"},{name:"논술",capacity:291,suneung:"일반2개합5이내·약학3개합4이내 한국사4등급",elements:"논술70%+교과20%+출결10%"}],정시:"가/나/다군. 수능80%+학생부평가20%. 인문:국어35%수학25%영어15%탐구15%한국사10%. 자연:국어25%수학35%영어15%탐구15%한국사10%",특징:"Do Dream모집인원대폭확대(656→894명). 면접비율상향(30→40%). 정시학생부평가20%신설. 논술수능최저완화"},
+  "홍익대학교":{수시:[{name:"학교장추천자전형(교과)",capacity:420,suneung:"2개합5이내 한국사4등급",elements:"교과95%+출결5%"},{name:"학교생활우수자(서류형)(종합)",capacity:434,suneung:"2개합5이내 한국사4등급",elements:"서류100%"},{name:"논술전형",capacity:384,suneung:"2개합5이내 한국사4등급",elements:"논술90%+교과10%"},{name:"미술우수자(종합)",capacity:289,suneung:"3개합9이내 한국사4등급",elements:"1단계서류80%+교과20%(3배수)→2단계서류40%+면접60%"}],정시:"㉯/㉰군. 수능90%+교과10%(㉰군인문/자연). 인문:국어30%수학30%사탐15%과탐10%영어15%. 자연:국어20%수학35%사탐10%과탐20%영어15%",특징:"학교장추천인원제한폐지. 학교생활우수자(면접형)신설(캠퍼스자율전공). 미술대학학과통합(미술학부/디자인학부/공예학부). 교과반영지표석차등급→성취도변경"}
+};
+
+const A2G={A:1,B:2,C:3,D:4,E:5};
+const SPECIAL=['자사고(전국단위)','자사고(광역단위)','과학고','영재고','외국어고','국제고'];
+
+let grade=0, selJH=[], selUniv=[];
+let semData={}, curSem='';
+let uploadedFiles=[], uploadedB64=[];
+
+function getSems(g){return g===3?['1-1','1-2','2-1','2-2','3-1','3-2']:g===2?['1-1','1-2','2-1','2-2']:['1-1','1-2'];}
+const DEFSUBJ=['국어','수학','영어','한국사','통합사회','통합과학'];
+
+// ── 학년 ──
+function selGrade(g){
+  grade=g;
+  ['g1','g2','g3'].forEach(id=>document.getElementById(id).classList.remove('sel'));
+  document.getElementById('g'+g).classList.add('sel');
+  const lbl={3:'— 2026학년도 (현행 9등급)',2:'— 2027학년도 (고교학점제 1~5등급)',1:'— 2028학년도 (고교학점제 1~5등급)'};
+  document.getElementById('gradeLabel').textContent=lbl[g];
+  document.getElementById('input3').classList.toggle('hidden',g!==3);
+  document.getElementById('inputGHP').classList.toggle('hidden',g===3);
+  if(g!==3) initSem(g);
+  goStep(2);
+}
+
+// ── 학기 ──
+function initSem(g){
+  semData={};
+  getSems(g).forEach(s=>{semData[s]=DEFSUBJ.map(n=>({name:n,g5:'',ach:'-',unit:'3'}));});
+  curSem=getSems(g)[0];
+  renderTabs(); renderTable(curSem); calcCumul();
+}
+function renderTabs(){
+  document.getElementById('semTabs').innerHTML=getSems(grade).map(s=>{
+    const hasD=semData[s]&&semData[s].some(r=>r.g5||r.ach!=='-');
+    let c='sem-tab';
+    if(s===curSem)c+=' active';
+    if(hasD)c+=' has-data';
+    return `<div class="${c}" onclick="switchSem('${s}')">${s}학기</div>`;
+  }).join('');
+}
+function switchSem(s){saveTable(curSem);curSem=s;renderTabs();renderTable(s);calcCumul();}
+function renderTable(s){
+  const rows=semData[s]||[];
+  document.getElementById('semContent').innerHTML=`
+    <table class="g-table">
+      <thead><tr>
+        <th style="width:32%;text-align:left;padding-left:10px">과목명</th>
+        <th>석차등급<br><small style="font-weight:500;color:#94a3b8">1~5등급</small></th>
+        <th>성취도<br><small style="font-weight:500;color:#94a3b8">A~E</small></th>
+        <th>이수단위<br><small style="font-weight:500;color:#94a3b8">주당시수</small></th>
+        <th style="width:8%"></th>
+      </tr></thead>
+      <tbody id="semBody">${rows.map((r,i)=>rowHTML(r,i)).join('')}</tbody>
+    </table>
+    <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="addRow()">+ 과목 추가</button>`;
+}
+function rowHTML(r,i){
+  const opts=['-','A','B','C','D','E'].map(v=>`<option ${r.ach===v?'selected':''}>${v}</option>`).join('');
+  return `<tr>
+    <td class="nm"><input type="text" value="${r.name}" placeholder="과목명" oninput="cell(${i},'name',this.value)"></td>
+    <td><input type="number" min="1" max="5" value="${r.g5}" placeholder="-" oninput="cell(${i},'g5',this.value)"></td>
+    <td><select onchange="cell(${i},'ach',this.value)">${opts}</select></td>
+    <td><input type="number" min="1" max="8" value="${r.unit}" oninput="cell(${i},'unit',this.value)"></td>
+    <td><button class="del-btn" onclick="delRow(${i})">✕</button></td>
+  </tr>`;
+}
+function cell(i,f,v){if(semData[curSem]?.[i]){semData[curSem][i][f]=v;calcCumul();}}
+function addRow(){saveTable(curSem);semData[curSem].push({name:'',g5:'',ach:'-',unit:'3'});renderTable(curSem);calcCumul();}
+function delRow(i){saveTable(curSem);semData[curSem].splice(i,1);renderTable(curSem);calcCumul();}
+function saveTable(s){
+  const rows=document.querySelectorAll('#semBody tr');
+  if(!rows.length)return;
+  semData[s]=[...rows].map(r=>{
+    const c=r.querySelectorAll('input,select');
+    return{name:c[0]?.value||'',g5:c[1]?.value||'',ach:c[2]?.value||'-',unit:c[3]?.value||'3'};
+  });
+}
+function calcCumul(){
+  saveTable(curSem);
+  let tS=0,tU=0,cnt=0;const aC={A:0,B:0,C:0,D:0,E:0};
+  Object.values(semData).forEach(rows=>rows.forEach(r=>{
+    const u=parseFloat(r.unit)||0;
+    if(r.g5&&u){tS+=parseFloat(r.g5)*u;tU+=u;cnt++;}
+    else if(r.ach&&r.ach!=='-'&&u){const g=A2G[r.ach];if(g){tS+=g*u;tU+=u;cnt++;aC[r.ach]++;}}
+  }));
+  const avg=tU>0?(tS/tU):0;
+  document.getElementById('cumulGrade').textContent=avg>0?avg.toFixed(2)+'등급':'-';
+  document.getElementById('cumulCount').textContent=cnt+'과목';
+  document.getElementById('cumulUnit').textContent=tU+'단위';
+  const aStr=Object.entries(aC).filter(([,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(' ');
+  document.getElementById('cumulAchieve').textContent=aStr||'-';
+  renderTabs();
+}
+function getCumul(){
+  let tS=0,tU=0;
+  Object.values(semData).forEach(rows=>rows.forEach(r=>{
+    const u=parseFloat(r.unit)||0;
+    if(r.g5&&u){tS+=parseFloat(r.g5)*u;tU+=u;}
+    else if(r.ach&&r.ach!=='-'&&u){const g=A2G[r.ach];if(g){tS+=g*u;tU+=u;}}
+  }));
+  return tU>0?(tS/tU).toFixed(2):'-';
+}
+
+// ── 학교유형 ──
+function onSchoolType(){
+  const t=document.getElementById('schoolType').value;
+  document.getElementById('schoolNotice').classList.toggle('hidden',!SPECIAL.includes(t));
+}
+
+// ── 모의고사 ──
+function calcMock(){
+  const gs=[document.getElementById('mKor').value,document.getElementById('mMath').value,
+            document.getElementById('mEng').value,document.getElementById('mTangu').value]
+    .filter(g=>g).map(Number);
+  const el=document.getElementById('mockResult');
+  if(gs.length<2){el.style.display='none';return;}
+  const s=[...gs].sort((a,b)=>a-b);
+  const s2=s[0]+s[1],s3=s.length>=3?s[0]+s[1]+s[2]:null;
+  let h=`📊 상위2개합: <b>${s2}등급</b> → 합5이내:${s2<=5?'✅':'❌'} 합6이내:${s2<=6?'✅':'❌'} 합7이내:${s2<=7?'✅':'❌'} 합8이내:${s2<=8?'✅':'❌'}`;
+  if(s3!==null)h+=`<br>상위3개합: <b>${s3}등급</b> → 합8이내:${s3<=8?'✅':'❌'} 합9이내:${s3<=9?'✅':'❌'}`;
+  el.innerHTML=h;el.style.display='block';
+}
+
+// ── 파일 업로드 ──
+function handleFiles(files){
+  [...files].forEach(f=>{
+    if(uploadedFiles.length>=5)return;
+    uploadedFiles.push(f);
+    const reader=new FileReader();
+    reader.onload=e=>{
+      uploadedB64.push({name:f.name,type:f.type,data:e.target.result.split(',')[1]});
+    };
+    reader.readAsDataURL(f);
+  });
+  renderFileList();
+}
+function renderFileList(){
+  const el=document.getElementById('fileList');
+  el.innerHTML=uploadedFiles.map((f,i)=>`
+    <div class="file-item">
+      📄 ${f.name} <span style="color:#94a3b8">(${(f.size/1024).toFixed(0)}KB)</span>
+      <span class="fi-remove" onclick="removeFile(${i})">✕</span>
+    </div>`).join('');
+  document.getElementById('uploadArea').classList.toggle('active',uploadedFiles.length>0);
+}
+function removeFile(i){uploadedFiles.splice(i,1);uploadedB64.splice(i,1);renderFileList();}
+
+// 드래그앤드롭
+document.addEventListener('DOMContentLoaded',()=>{
+  const area=document.getElementById('uploadArea');
+  area.addEventListener('dragover',e=>{e.preventDefault();area.style.borderColor='var(--navy)';});
+  area.addEventListener('dragleave',()=>{area.style.borderColor='';});
+  area.addEventListener('drop',e=>{e.preventDefault();area.style.borderColor='';handleFiles(e.dataTransfer.files);});
+});
+
+// ── 칩 ──
+function togChip(el,val){
+  el.classList.toggle('sel');
+  if(el.classList.contains('sel'))selJH.push(val);
+  else selJH=selJH.filter(v=>v!==val);
+}
+function togUniv(el){
+  const v=el.textContent;
+  if(el.classList.contains('sel')){el.classList.remove('sel');selUniv=selUniv.filter(u=>u!==v);}
+  else if(selUniv.length<6){el.classList.add('sel');selUniv.push(v);}
+}
+
+// ── 스텝 ──
+function goStep(n){
+  const total=5;
+  for(let i=1;i<=total;i++){
+    document.getElementById('step'+i).classList.toggle('hidden',i!==n);
+    const s=document.getElementById('s'+i);
+    s.classList.remove('active','done');
+    if(i===n)s.classList.add('active');
+    else if(i<n)s.classList.add('done');
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── 대학데이터 조회 ──
+function getUD(name){
+  if(UNIV_DATA[name+'학교'])return UNIV_DATA[name+'학교'];
+  if(UNIV_DATA[name])return UNIV_DATA[name];
+  const k=Object.keys(UNIV_DATA).find(k=>k.includes(name)||name.includes(k.replace('학교','').replace('여자','')));
+  return k?UNIV_DATA[k]:null;
+}
+
+// ── 프롬프트 ──
+function buildPrompt(){
+  let score='';
+  if(grade===3){
+    const n=document.getElementById('naesin').value||'미입력';
+    const sn=document.getElementById('suneung').value||'미입력';
+    const k=document.getElementById('kor').value||'-';
+    const m=document.getElementById('math2').value||'-';
+    const e=document.getElementById('eng').value||'-';
+    score=`[고3/2026학년도/현행9등급]\n내신누적평균:${n}등급 수능예상백분위:${sn}%\n국어:${k}등급 수학(${document.getElementById('mathtype').value}):${m}등급 영어:${e}등급 탐구:${document.getElementById('exp').value}`;
+  } else {
+    const c=getCumul(),yr=grade===2?'2027':'2028';
+    score=`[고${grade}/${yr}학년도/고교학점제1~5등급]\n희망계열:${document.getElementById('major1').value}\n누적평균석차등급:${c}등급\n\n학기별성적:`;
+    getSems(grade).forEach(sem=>{
+      const rows=(semData[sem]||[]).filter(r=>r.name&&(r.g5||r.ach!=='-'));
+      if(rows.length)score+=`\n[${sem}학기] `+rows.map(r=>{let s=r.name;if(r.g5)s+=` 석차${r.g5}등급`;if(r.ach&&r.ach!=='-')s+=` 성취도${r.ach}`;return s+`(${r.unit}단위)`;}).join(', ');
+    });
+  }
+
+  const sType=document.getElementById('schoolType').value;
+  const sName=document.getElementById('schoolName').value;
+  const isSpec=SPECIAL.includes(sType);
+  const schoolNote=isSpec?`\n⚡[특목·자사고재학] ${sType} — 내신경쟁 극도치열. 전국자사고 3등급=일반고 1~1.5등급 수준. 학종평가시 고교유형·교육환경감안. 일반고대비 어드밴티지 반드시 반영하여 분석할 것.`:'';
+
+  const mN=document.getElementById('mockName').value;
+  const mK=document.getElementById('mKor').value,mM=document.getElementById('mMath').value;
+  const mE=document.getElementById('mEng').value,mT=document.getElementById('mTangu').value;
+  let mock='모의고사:미입력';
+  if(mN&&(mK||mM||mE||mT)){
+    mock=`${mN}: 국어${mK||'-'} 수학${mM||'-'} 영어${mE||'-'} 탐구${mT||'-'}`;
+    const gs=[mK,mM,mE,mT].filter(g=>g).map(Number).sort((a,b)=>a-b);
+    if(gs.length>=2)mock+=` (상위2개합:${gs[0]+gs[1]}등급)`;
+    if(gs.length>=3)mock+=` (상위3개합:${gs[0]+gs[1]+gs[2]}등급)`;
+  }
+
+  const sbText=document.getElementById('sbText').value;
+  const sbInfo=sbText?`\n\n[학생부 세특·활동 내용]\n${sbText}`:'';
+  const hasFiles=uploadedB64.length>0?`\n[학생부 파일 ${uploadedB64.length}개 업로드됨 — 아래 분석 반영]`:'';
+
+  const cU=document.getElementById('univCustom').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const allU=[...selUniv,...cU];
+  const dept=document.getElementById('dept').value||'미정';
+  const jh=selJH.length?selJH.join(', '):'전형미선택(AI추천)';
+
+  let univStr='';
+  allU.forEach(u=>{
+    const d=getUD(u);
+    if(d){
+      univStr+=`\n\n[${u} 2028전형]\n`;
+      univStr+=d.수시.map(t=>`• ${t.name}(${t.capacity}명, 수능최저:${t.suneung}, ${t.elements})`).join('\n');
+      univStr+=`\n• 정시:${d.정시}\n• 2028특징:${d.특징}`;
+    }
+  });
+
+  return `당신은 대한민국 최고 수준의 대입 전문 컨설턴트 AI입니다. 아래 수험생 정보와 2028학년도 실제 전형 데이터를 기반으로 매우 구체적이고 실질적인 입시 전략을 분석해주세요.
+
+═══ 수험생 성적 정보 ═══
+${score}
+
+═══ 학교 환경 ═══
+재학고교: ${sName||'미입력'} (${sType})${schoolNote}
+${mock}
+비교과:${document.getElementById('extracurr').value} / 자소서·면접:${document.getElementById('essay').value}
+${sbInfo}${hasFiles}
+
+═══ 희망 사항 ═══
+희망전형: ${jh}
+희망대학: ${allU.join(', ')||'미선택'}
+희망학과: ${dept}
+${univStr}
+
+═══ 분석 요청 ═══
+아래 형식으로 상세하게 분석해주세요:
+
+🟢 안정 지원 (합격 가능성 70% 이상)
+- 현실적으로 안정적인 대학/전형 2~3곳
+- 각 전형의 수능최저 충족 여부, 전형요소, 준비 포인트 구체적으로
+
+🟡 적정 지원 (합격 가능성 40~70%)
+- 적정 수준 도전 2~3곳
+- 합격 가능성 높이는 구체적 전략
+
+🔴 도전 지원 (합격 가능성 40% 미만)
+- 목표 대학 1~2곳
+- 현재 부족한 점과 보완 방향
+
+📋 전체 전략 요약 및 지금 당장 해야 할 3가지 핵심 행동 계획
+
+한국어로 친절하고 구체적으로 분석해주세요.`;
+}
+
+// ── API 호출 ──
+async function startConsult(){
+  const yr=grade===3?'2026학년도':grade===2?'2027학년도':'2028학년도';
+  document.getElementById('yearBadge').textContent=`— ${yr} 입시`;
+  document.getElementById('printMeta').textContent=`${new Date().toLocaleDateString('ko-KR')} 분석 | ${yr} 입시`;
+  goStep(5);
+  const box=document.getElementById('streamBox');
+  box.innerHTML='<span style="color:var(--sub);font-size:16px">🤖 AI가 분석 중입니다... 잠시만 기다려주세요</span>';
+
+  try{
+    // 메시지 구성 (파일 포함 시)
+    let msgContent;
+    if(uploadedB64.length>0){
+      msgContent=[
+        ...uploadedB64.map(f=>({
+          type:f.type.includes('pdf')?'document':'image',
+          source:{type:'base64',media_type:f.type,data:f.data}
+        })),
+        {type:'text',text:buildPrompt()}
+      ];
+    } else {
+      msgContent=buildPrompt();
+    }
+
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:8000,stream:true,
+        messages:[{role:'user',content:msgContent}]
+      })
+    });
+
+    if(!resp.ok){const e=await resp.json();box.innerHTML=`<span style="color:red">오류: ${e.error?.message}</span>`;return;}
+
+    const reader=resp.body.getReader(),dec=new TextDecoder();
+    let txt='';box.innerHTML='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      for(const line of dec.decode(value).split('\n')){
+        if(line.startsWith('data: ')){
+          try{
+            const j=JSON.parse(line.slice(6));
+            if(j.type==='content_block_delta'&&j.delta?.text){
+              txt+=j.delta.text;
+              box.textContent=txt;
+              box.scrollTop=box.scrollHeight;
+            }
+          }catch{}
+        }
+      }
+    }
+  }catch(e){box.innerHTML=`<span style="color:red">오류: ${e.message}</span>`;}
+}
+
+// ── 인쇄 ──
+function printResult(){
+  window.print();
+}
+
+// ── 재시작 ──
+function restart(){
+  selJH=[];selUniv=[];uploadedFiles=[];uploadedB64=[];
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('univCustom').value='';
+  document.getElementById('dept').value='';
+  document.getElementById('sbText').value='';
+  document.getElementById('fileList').innerHTML='';
+  document.getElementById('uploadArea').classList.remove('active');
+  goStep(1);
+  ['g1','g2','g3'].forEach(id=>document.getElementById(id).classList.remove('sel'));
+  grade=0;
+}
+</script>
+</body>
+</html>
