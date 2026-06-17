@@ -691,7 +691,7 @@ function buildSectionPrompt(base,ask){
 ═══ 분석 요청 (이 항목만 작성) ═══
 ${ask}
 
-한국어로 매우 구체적이고 실질적으로 작성하세요. 다른 항목(안정/적정/도전 지원, 보완전략, 종합요약 등)은 별도로 작성될 예정이므로 이 항목 내용에만 집중하고, 다른 항목과 중복되는 내용은 쓰지 마세요. 추상적인 조언 대신 위에 주어진 구체적 전형 데이터와 수험생 정보를 근거로 분석하세요.`;
+한국어로 매우 구체적이고 실질적으로 작성하세요. 다른 항목(안정/적정/도전 지원, 보완전략, 종합요약 등)은 별도로 작성될 예정이므로 이 항목 내용에만 집중하고, 다른 항목과 중복되는 내용은 쓰지 마세요. 추상적인 조언 대신 위에 주어진 구체적 전형 데이터와 수험생 정보를 근거로 분석하세요. 분량이 길어져도 괜찮으니 문장을 어색하게 줄이지 말고 끝까지 충분히 작성하세요.`;
 }
 
 function fileBlock(f){
@@ -701,25 +701,46 @@ function fileBlock(f){
   return {type:"image",source:{type:"base64",media_type:f.type||"image/jpeg",data:f.data}};
 }
 
-async function callClaude(promptText){
+function buildInitialContent(promptText){
   const content=[];
   uploadedB64.forEach(f=>content.push(fileBlock(f)));
   content.push({type:"text",text:promptText});
-  const resp=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      model:"claude-sonnet-4-6",
-      max_tokens:1000,
-      messages:[{role:"user",content}]
-    })
-  });
-  if(!resp.ok){
-    const e=await resp.json().catch(()=>({}));
-    throw new Error(e.error?.message||'요청 실패');
+  return content;
+}
+
+// 한 항목을 끝까지 받아올 때까지(최대 4회) 이어쓰기 요청을 반복한다.
+// max_tokens 한도 때문에 문장이 중간에 끊기면(stop_reason==='max_tokens')
+// 끊긴 지점부터 이어서 작성해달라고 추가 요청을 보내 문단을 완결시킨다.
+async function runSection(target,promptText){
+  let messages=[{role:"user",content:buildInitialContent(promptText)}];
+  let fullText='';
+  for(let attempt=0;attempt<4;attempt++){
+    let data;
+    try{
+      const resp=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages})
+      });
+      if(!resp.ok){
+        const e=await resp.json().catch(()=>({}));
+        throw new Error(e.error?.message||'요청 실패');
+      }
+      data=await resp.json();
+    }catch(e){
+      fullText+=`\n\n[오류로 일부 내용이 누락되었습니다: ${e.message}]`;
+      target.textContent=fullText;
+      target.classList.remove('pending');
+      return;
+    }
+    const textPart=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    fullText+=textPart;
+    target.textContent=fullText;
+    target.classList.remove('pending');
+    if(data.stop_reason!=='max_tokens')return;
+    messages.push({role:"assistant",content:textPart});
+    messages.push({role:"user",content:"바로 이어서 계속 작성해주세요. 새로 시작하지 말고 끊긴 부분부터 자연스럽게 이어가세요."});
   }
-  const data=await resp.json();
-  return data.content?.filter(b=>b.type==='text').map(b=>b.text).join('\n')||'(응답 없음)';
 }
 
 const SECTIONS=[
@@ -752,14 +773,7 @@ async function startConsult(){
     const target=document.getElementById('sec-'+i);
     target.textContent='⏳ 분석 중입니다...';
     target.classList.add('pending');
-    try{
-      const text=await callClaude(buildSectionPrompt(base,sec.ask));
-      target.textContent=text;
-      target.classList.remove('pending');
-    }catch(e){
-      target.textContent=`오류: ${e.message}`;
-      target.classList.remove('pending');
-    }
+    await runSection(target,buildSectionPrompt(base,sec.ask));
   }
   progress.textContent=`분석 완료 (${SECTIONS.length}개 항목)`;
 }
